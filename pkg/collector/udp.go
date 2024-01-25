@@ -115,6 +115,28 @@ func (cp *CollectingProcess) startUDPServer() {
 	<-cp.stopChan
 }
 
+func (cp *CollectingProcess) startUDPServerNoTLSWithConn(conn *net.UDPConn) {
+	cp.updateAddress(conn.LocalAddr())
+	klog.Infof("Start UDP collecting process on %s", cp.netAddress)
+	go func() {
+		for {
+			buff := make([]byte, cp.maxBufferSize)
+			size, address, err := conn.ReadFromUDP(buff)
+			if err != nil {
+				if size == 0 { // received stop collector message
+					return
+				}
+				klog.Errorf("Error in udp collecting process: %v", err)
+				return
+			}
+			klog.V(2).Infof("Receiving %d bytes from %s", size, address.String())
+			cp.handleUDPClient(address)
+			cp.clients[address.String()].packetChan <- bytes.NewBuffer(buff[0:size])
+		}
+	}()
+	<-cp.stopChan
+}
+
 func (cp *CollectingProcess) handleUDPClient(address net.Addr) {
 	if _, exist := cp.clients[address.String()]; !exist {
 		client := cp.createClient()

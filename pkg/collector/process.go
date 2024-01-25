@@ -114,6 +114,13 @@ func (cp *CollectingProcess) Start() {
 	}
 }
 
+func (cp *CollectingProcess) StartUDPNoTLSWithConn(conn *net.UDPConn) {
+	if cp.protocol == "tcp" {
+		return
+	}
+	cp.startUDPServerNoTLSWithConn(conn)
+}
+
 func (cp *CollectingProcess) Stop() {
 	close(cp.stopChan)
 	// wait for all connections to be safely deleted and returned
