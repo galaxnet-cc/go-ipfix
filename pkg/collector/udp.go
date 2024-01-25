@@ -160,11 +160,12 @@ func (cp *CollectingProcess) handleUDPClient(address net.Addr) {
 					message, err := cp.decodePacket(packet, address.String())
 					if err != nil {
 						klog.Error(err)
+					} else {
+						klog.V(4).Infof("Processed message from exporter %v, number of records: %v, observation domain ID: %v",
+							message.GetExportAddress(), message.GetSet().GetNumberOfRecords(), message.GetObsDomainID())
+						ticker.Stop()
+						ticker = time.NewTicker(time.Duration(entities.TemplateRefreshTimeOut) * time.Second)
 					}
-					klog.V(4).Infof("Processed message from exporter %v, number of records: %v, observation domain ID: %v",
-						message.GetExportAddress(), message.GetSet().GetNumberOfRecords(), message.GetObsDomainID())
-					ticker.Stop()
-					ticker = time.NewTicker(time.Duration(entities.TemplateRefreshTimeOut) * time.Second)
 				}
 			}
 		}()
